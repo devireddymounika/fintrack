@@ -1,0 +1,90 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                String         @id @default(uuid())
+  email             String         @unique
+  password          String
+  name              String
+  currency          String         @default("₹")
+  theme             String         @default("dark")
+  accountType       String         @default("Personal Account")
+  monthlyIncomeGoal Float          @default(80000)
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+
+  transactions      Transaction[]
+  budgets           Budget[]
+  savingsGoals      SavingsGoal[]
+  notifications     Notification[]
+
+  @@map("users")
+}
+
+model Transaction {
+  id            String   @id @default(uuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title         String
+  amount        Float
+  type          String   // "income" | "expense"
+  category      String
+  date          String   // "YYYY-MM-DD"
+  paymentMethod String   @default("UPI")
+  notes         String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([userId, date])
+  @@map("transactions")
+}
+
+model Budget {
+  id           String   @id @default(uuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category     String
+  monthlyLimit Float
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@unique([userId, category])
+  @@map("budgets")
+}
+
+model SavingsGoal {
+  id            String   @id @default(uuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title         String
+  targetAmount  Float
+  currentAmount Float    @default(0)
+  category      String?
+  targetDate    String?
+  icon          String   @default("🎯")
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([userId])
+  @@map("savings_goals")
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title     String
+  message   String
+  type      String   @default("info")
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@map("notifications")
+}
